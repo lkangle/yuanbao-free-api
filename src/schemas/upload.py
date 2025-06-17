@@ -1,10 +1,10 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class File(BaseModel):
     file_name: str
     file_data: str
-    file_type: str = Field(..., pattern="^(image|doc)$")
+    file_type: str
 
 
 class UploadFileRequest(BaseModel):

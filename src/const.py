@@ -1,13 +1,6 @@
 from enum import Enum
 
 
-class CHUNK_TYPE(str, Enum):
-    STATUS = "status"
-    SEARCH_WITH_TEXT = "search_with_text"
-    REASONER = "reasoner"
-    TEXT = "text"
-
-
 MODEL_MAPPING = {
     "deepseek-v3": {"model": "deep_seek_v3", "support_functions": None},
     "deepseek-r1": {"model": "deep_seek", "support_functions": None},

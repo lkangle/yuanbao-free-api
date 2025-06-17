@@ -4,7 +4,7 @@ from typing import AsyncGenerator, Dict, List, Optional
 
 import httpx
 
-from src.const import CHUNK_TYPE, MODEL_MAPPING
+from src.const import MODEL_MAPPING
 from src.schemas.chat import ChatCompletionChunk, Choice, ChoiceDelta, Message
 
 
@@ -25,11 +25,15 @@ def parse_messages(messages: List[Message]) -> str:
     return prompt
 
 
-async def process_response_stream(response: httpx.Response, model_id: str) -> AsyncGenerator[str, None]:
+async def process_response_stream(
+    response: httpx.Response, model_id: str
+) -> AsyncGenerator[str, None]:
     def _create_chunk(content: str, finish_reason: Optional[str] = None) -> str:
         choice_delta = ChoiceDelta(content=content)
         choice = Choice(delta=choice_delta, finish_reason=finish_reason)
-        chunk = ChatCompletionChunk(created=int(time.time()), model=model_id, choices=[choice])
+        chunk = ChatCompletionChunk(
+            created=int(time.time()), model=model_id, choices=[choice]
+        )
         return chunk.model_dump_json(exclude_unset=True)
 
     status = ""
@@ -44,22 +48,10 @@ async def process_response_stream(response: httpx.Response, model_id: str) -> As
             yield _create_chunk("", finish_reason)
             yield "[DONE]"
             break
-        elif data in (CHUNK_TYPE.STATUS, CHUNK_TYPE.SEARCH_WITH_TEXT, CHUNK_TYPE.REASONER, CHUNK_TYPE.TEXT):
-            status = data
-            continue
         elif not data.startswith("{"):
             continue
 
         chunk_data: Dict = json.loads(data)
-        if status == CHUNK_TYPE.TEXT:
-            if chunk_data.get("msg"):
-                yield _create_chunk(f"[{status}]" + chunk_data["msg"])
-            if chunk_data.get("stopReason"):
-                finish_reason = chunk_data["stopReason"]
-        elif status == CHUNK_TYPE.REASONER:
-            yield _create_chunk(f"[{status}]" + chunk_data.get("content", ""))
-        elif status == CHUNK_TYPE.SEARCH_WITH_TEXT:
-            docs = chunk_data.get("docs", [])
-            yield _create_chunk(f"[{status}]" + json.dumps(docs, ensure_ascii=False))
-        if status == CHUNK_TYPE.STATUS:
-            yield _create_chunk(f"[{status}]" + chunk_data.get("msg", ""))
+        if chunk_data.get("stopReason"):
+            finish_reason = chunk_data["stopReason"]
+        yield _create_chunk(json.dumps(chunk_data, ensure_ascii=False))

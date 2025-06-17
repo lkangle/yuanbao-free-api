@@ -88,7 +88,7 @@ data = {
     "file": {
         "file_name": file_name,
         "file_data": file_data ,
-        "file_type": "image",   # 只能是 image 或 doc
+        "file_type": "image",   # image、doc、excel、pdf等，具体看抓包返回的文件类型
     },
 }
 headers = {"Authorization": f"Bearer {hy_token}"}
